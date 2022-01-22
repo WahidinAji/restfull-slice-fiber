@@ -56,7 +56,7 @@ func main() {
 				Update:  get{Method: "PUT", Url: "/albums/id", Param: "id integer", Form: []string{"title", "artist", "price"}},
 				Delete:  get{Method: "DELETE", Url: "/albums/id", Param: "id integer"},
 			},
-			"repo":    "https://github.com/WahidinAji/fiber-example/tree/main/restapi-slice",
+			"repo":    "https://github.com/WahidinAji/restfull-slice-fiber",
 			"postman": "You guys can download the postman collection and environment *.json in that repository. You can run the testing with postman.",
 		})
 		c.Set("Content-type", "application/json; charset=UTF-8")
