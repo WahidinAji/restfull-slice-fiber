@@ -43,56 +43,69 @@ func main() {
 		Update  get
 		Delete  get
 	}
+	type response struct {
+		Code    int    `json:"code"`
+		Message string `json:"message"`
+		Url     api    `json:"url"`
+		Repo    string `json:"repo"`
+		Postman string `json:"postman"`
+	}
 	app := fiber.New()
 	app.Use(cors.New())
 	app.Get("/", func(c *fiber.Ctx) error {
-		response := c.JSON(&fiber.Map{
-			"code":    c.Response().StatusCode(),
-			"message": "OK",
-			"url": api{
+		response := response{
+			Code:    c.Response().StatusCode(),
+			Message: "OK",
+			Url: api{
 				GetAll:  get{Method: "GET", Url: "/albums"},
 				Create:  get{Method: "POST", Url: "/albums", Form: []string{"title", "artist", "price"}},
 				GetById: get{Method: "GET", Url: "/albums/id", Param: "id integer"},
 				Update:  get{Method: "PUT", Url: "/albums/id", Param: "id integer", Form: []string{"title", "artist", "price"}},
 				Delete:  get{Method: "DELETE", Url: "/albums/id", Param: "id integer"},
 			},
-			"repo":    "https://github.com/WahidinAji/restfull-slice-fiber",
-			"postman": "You guys can download the postman collection and environment *.json in that repository. You can run the testing with postman.",
-		})
+			Repo:    "https://github.com/WahidinAji/restfull-slice-fiber",
+			Postman: "You guys can download the postman collection and environment *.json in that repository. You can run the testing with postman.",
+		}
 		c.Set("Content-type", "application/json; charset=UTF-8")
-		return response
+		return c.JSON(response)
 	})
 	setupRoute(app)
 	log.Fatal(app.Listen(":8080"))
 }
 
 func getAlbums(c *fiber.Ctx) error {
-	response := c.JSON(&fiber.Map{
-		"code":    c.Response().StatusCode(),
-		"message": "Successfuly",
-		"status":  true,
-		"data":    albums,
-	})
+	type response struct {
+		Code    int    `json:"code"`
+		Message string `json:"message"`
+		Status  bool   `json:"status"`
+		Data    []Album
+	}
+	res := response{
+		Code:    c.Response().StatusCode(),
+		Message: "Successfuly",
+		Status:  true,
+		Data:    albums,
+	}
 	c.Set("Content-type", "application/json; charset=UTF-8")
-	return response
+	return c.JSON(res)
 }
 func createAlbum(c *fiber.Ctx) error {
-	newAlbum := new(Album)
-	if err := c.BodyParser(&newAlbum); err != nil {
+	// newAlbum := new(Album)
+	var album Album
+	if err := c.BodyParser(&album); err != nil {
 		return c.Status(503).SendString(err.Error())
 	}
-	newAlbum.ID = len(albums) + 1
-	// albums = append(albums, Album{ID: newAlbum.ID, Title: newAlbum.Title, Artist: newAlbum.Artist, Price: newAlbum.Price})
-	albums = append(albums, *newAlbum)
+	album.ID = len(albums) + 1
+	albums = append(albums, album)
 	c.Status(fiber.StatusCreated)
-	response := c.JSON(&fiber.Map{
-		"code":    c.Response().StatusCode(),
-		"message": "Album created successfuly",
-		"status":  true,
-		"data":    newAlbum,
-	})
+	res := SingleResponse{
+		Code:    c.Response().StatusCode(),
+		Message: "Album created successfuly",
+		Status:  true,
+		Data:    album,
+	}
 	c.Set("Content-type", "application/json; charset=UTF-8")
-	return response
+	return c.JSON(res)
 }
 func getAlbumsById(c *fiber.Ctx) error {
 	id, err := c.ParamsInt("id")
@@ -101,25 +114,25 @@ func getAlbumsById(c *fiber.Ctx) error {
 	}
 	for _, album := range albums {
 		if album.ID == id {
-			response := c.JSON(&fiber.Map{
-				"code":    c.Response().StatusCode(),
-				"message": "Successfuly",
-				"status":  true,
-				"data":    album,
-			})
+			res := SingleResponse{
+				Code:    c.Response().StatusCode(),
+				Message: "Successfuly",
+				Status:  true,
+				Data:    album,
+			}
 			c.Set("Content-type", "application/json; charset=UTF-8")
-			return response
+			return c.JSON(res)
 		}
 	}
 	c.Status(404)
-	resposne := c.JSON(&fiber.Map{
-		"code":    c.Response().StatusCode(),
-		"message": "Failed id was not found",
-		"status":  false,
-		"data":    "",
-	})
+	resposne := ResponseDataString{
+		Code:    c.Response().StatusCode(),
+		Message: "Failed id was not found",
+		Status:  false,
+		Data:    "id was not found",
+	}
 	c.Set("Content-type", "application/json; charset=UTF-8")
-	return resposne
+	return c.JSON(resposne)
 }
 func updateAlbumsById(c *fiber.Ctx) error {
 	id, err := c.ParamsInt("id")
@@ -134,25 +147,25 @@ func updateAlbumsById(c *fiber.Ctx) error {
 	for i = 0; i < len(albums); i++ {
 		if albums[i].ID == id {
 			albums[i] = Album{ID: id, Title: album.Title, Artist: album.Artist, Price: album.Price}
-			response := c.JSON(&fiber.Map{
-				"code":    c.Response().StatusCode(),
-				"message": "Updated successfuly",
-				"status":  true,
-				"data":    albums[i],
-			})
+			response := SingleResponse{
+				Code:    c.Response().StatusCode(),
+				Message: "Updated successfuly",
+				Status:  true,
+				Data:    albums[i],
+			}
 			c.Set("Content-type", "application/json; charset=UTF-8")
-			return response
+			return c.JSON(response)
 		}
 	}
 	c.Status(404)
-	response := c.JSON(&fiber.Map{
-		"code":    c.Response().StatusCode(),
-		"message": "Failed id was not found",
-		"status":  false,
-		"data":    "id was not found",
-	})
+	response := ResponseDataString{
+		Code:    c.Response().StatusCode(),
+		Message: "Failed id was not found",
+		Status:  false,
+		Data:    "id was not found",
+	}
 	c.Set("Content-type", "application/json; charset=UTF-8")
-	return response
+	return c.JSON(response)
 }
 
 func deleteAlbumsById(c *fiber.Ctx) error {
@@ -167,22 +180,41 @@ func deleteAlbumsById(c *fiber.Ctx) error {
 		if url.ID == id {
 			albums = append(albums[:i], albums[i+1:]...)
 			i--
-			response := c.JSON(&fiber.Map{
-				"code":    c.Response().StatusCode(),
-				"message": "Deleted Successfuly",
-				"status":  true,
-			})
+			response := Response{
+				Code:    c.Response().StatusCode(),
+				Message: "Deleted successfuly",
+				Status:  true,
+			}
 			c.Set("Content-type", "application/json; charset=UTF-8")
-			return response
+			return c.JSON(response)
 		}
 	}
 	c.Status(404)
-	response := c.JSON(&fiber.Map{
-		"code":    c.Response().StatusCode(),
-		"message": "Failed id was not found",
-		"status":  false,
-		"data":    "id was not found",
-	})
+	response := ResponseDataString{
+		Code:    c.Response().StatusCode(),
+		Message: "Failed id was not found",
+		Status:  false,
+		Data:    "id was not found",
+	}
 	c.Set("Content-type", "application/json; charset=UTF-8")
-	return response
+	return c.JSON(response)
+}
+
+type SingleResponse struct {
+	Code    int    `json:"code"`
+	Message string `json:"message"`
+	Status  bool   `json:"status"`
+	Data    Album
+}
+
+type Response struct {
+	Code    int
+	Message string
+	Status  bool
+}
+type ResponseDataString struct {
+	Code    int
+	Message string
+	Status  bool
+	Data    string
 }
